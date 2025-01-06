@@ -1,36 +1,39 @@
 package com.kira.farm_fresh_store.service.user;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.auth.oauth2.TokenResponse;
 import com.kira.farm_fresh_store.dto.EntityConverter;
+import com.kira.farm_fresh_store.dto.LoginRequest;
 import com.kira.farm_fresh_store.dto.RegisterUserModel;
 import com.kira.farm_fresh_store.dto.UserDto;
-import com.kira.farm_fresh_store.dto.identity.Credential;
-import com.kira.farm_fresh_store.dto.identity.TokenExchangeParam;
-import com.kira.farm_fresh_store.dto.identity.UserCreationParam;
+import com.kira.farm_fresh_store.dto.identity.*;
 import com.kira.farm_fresh_store.entity.Photo;
 import com.kira.farm_fresh_store.entity.user.User;
 import com.kira.farm_fresh_store.exception.ErrorNormalizer;
 import com.kira.farm_fresh_store.exception.ResourceNotFoundException;
 import com.kira.farm_fresh_store.repository.PhotoRepository;
 import com.kira.farm_fresh_store.repository.UserRepository;
+import com.kira.farm_fresh_store.response.ApiResponse;
 import com.kira.farm_fresh_store.response.keycloak.IdentityClient;
 import com.kira.farm_fresh_store.service.googleDrive.GoogleDriveService;
 import com.kira.farm_fresh_store.utils.enums.ETypeAccount;
 import com.kira.farm_fresh_store.utils.enums.ETypeUser;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.apache.http.auth.AuthenticationException;
+
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,13 +42,7 @@ public class UserService implements IUserService {
 
     private final ModelMapper modelMapper;
 
-    @Value("${idp.client-id}")
-    @NonFinal
-    String clientId;
-
-    @Value("${idp.client-secret}")
-    @NonFinal
-    String clientSecret;
+    private final KeycloakProvider keycloakProvider;
 
     private final UserRepository userRepository;
 
@@ -60,18 +57,29 @@ public class UserService implements IUserService {
     private final ErrorNormalizer errorNormalizer;
 
     @Override
+    public TokenExchangeResponse login(LoginRequest loginRequest) {
+            var token = identityClient.exchangeTokenClient(ClientTokenExchangeParam.builder()
+                    .grant_type("password")
+                    .client_id(keycloakProvider.getClientID())
+                    .client_secret(keycloakProvider.getClientSecret())
+                    .username(loginRequest.getUsername())
+                    .password(loginRequest.getPassword())
+                    .scope("openid")
+                    .build());
+            log.info("TokenInfo {}", token);
+            return token;
+    }
+
+    @Override
     public User register(RegisterUserModel registerUserModel) {
         try {
-            // Tạo tài khoản trong Keycloak
             var token = identityClient.exchangeToken(TokenExchangeParam.builder()
                     .grant_type("client_credentials")
-                    .client_id(clientId)
-                    .client_secret(clientSecret)
+                    .client_id(keycloakProvider.getClientID())
+                    .client_secret(keycloakProvider.getClientSecret())
                     .scope("openid").build());
 
-            log.info("TokenInfo {}", token);
 
-            // Tạo người dùng trong Keycloak
             var creationResponse = identityClient.createUser(
                     "Bearer " + token.getAccessToken(),
                     UserCreationParam.builder()
@@ -104,6 +112,7 @@ public class UserService implements IUserService {
         }
     }
 
+
     @Override
     public List<UserDto> getAllUsers() {
         List<User> users = userRepository.findAll();
@@ -122,7 +131,7 @@ public class UserService implements IUserService {
         String imageUrl = googleDriveService.uploadImageToDrive(file);
 
         // Kiểm tra nếu URL hợp lệ
-        if (imageUrl != null && !imageUrl.isEmpty()&&user!=null) {
+        if (imageUrl != null && !imageUrl.isEmpty() && user != null) {
             // Tạo đối tượng Photo mới và gán URL
             Photo photo = new Photo();
             photo.setUrl(imageUrl);

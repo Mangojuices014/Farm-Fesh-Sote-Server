@@ -3,6 +3,7 @@ package com.kira.farm_fresh_store.utils;
 public class FeedBackMessage {
     /*======================== Start User API=====================================*/
     public static final String CREATE_USER_SUCCESS = "Đăng ký thành công";
+    public static final String LOGIN_USER_SUCCESS = "Đăng nhập thành công";
     public static final String USER_FOUND = "Tìm thấy User";
     public static final String UPLOAD_PHOTO = "Cập nhập ảnh thành công";
     public static final String EMAIL_EXISTED = "Email đã tồn tại";
