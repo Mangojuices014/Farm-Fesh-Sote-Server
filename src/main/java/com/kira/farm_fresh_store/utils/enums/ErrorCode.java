@@ -14,7 +14,9 @@ public enum ErrorCode {
     EMAIL_EXISTED("Email đã tồn tại, vui lòng chọn email khác", HttpStatus.BAD_REQUEST),
     USER_EXISTED("Tên người dùng đã tồn tại, vui lòng chọn tên khác", HttpStatus.BAD_REQUEST),
     USERNAME_IS_MISSING("Vui lòng nhập tên người dùng", HttpStatus.BAD_REQUEST),
-    USER_NOT_EXISTED("Người dùng không tồn tại", HttpStatus.BAD_REQUEST);
+    USER_NOT_EXISTED("Người dùng không tồn tại", HttpStatus.BAD_REQUEST),
+    INVALID_CREDENTIALS("Thông tin tài khoản hoặc mật khẩu không chính xác", HttpStatus.BAD_REQUEST),
+    INVALID_PASSWORD_USERNAME("Tên người dùng hoặc mật khẩu không hợp lệ", HttpStatus.BAD_REQUEST);
 
     private final String message;
     private final HttpStatus statusCode;
@@ -23,4 +25,5 @@ public enum ErrorCode {
         this.message = message;
         this.statusCode = statusCode;
     }
+
 }

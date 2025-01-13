@@ -15,6 +15,6 @@ public class UserDto {
     private String lastName;
     private String firstName;
     private boolean enabled;
-    private ETypeUser typeUser;;
+    private ETypeUser typeUser;
     private ETypeAccount type_account;
 }

@@ -1,10 +1,9 @@
 package com.kira.farm_fresh_store.service.user;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.auth.oauth2.TokenResponse;
 import com.kira.farm_fresh_store.dto.EntityConverter;
-import com.kira.farm_fresh_store.dto.LoginRequest;
-import com.kira.farm_fresh_store.dto.RegisterUserModel;
+import com.kira.farm_fresh_store.exception.AppException;
+import com.kira.farm_fresh_store.request.LoginRequest;
+import com.kira.farm_fresh_store.request.RegisterUserModel;
 import com.kira.farm_fresh_store.dto.UserDto;
 import com.kira.farm_fresh_store.dto.identity.*;
 import com.kira.farm_fresh_store.entity.Photo;
@@ -13,24 +12,25 @@ import com.kira.farm_fresh_store.exception.ErrorNormalizer;
 import com.kira.farm_fresh_store.exception.ResourceNotFoundException;
 import com.kira.farm_fresh_store.repository.PhotoRepository;
 import com.kira.farm_fresh_store.repository.UserRepository;
-import com.kira.farm_fresh_store.response.ApiResponse;
+import com.kira.farm_fresh_store.request.ResetPasswordRequest;
+import com.kira.farm_fresh_store.request.user.UpdateRequestParam;
+import com.kira.farm_fresh_store.request.user.UpdateUserRequest;
 import com.kira.farm_fresh_store.response.keycloak.IdentityClient;
 import com.kira.farm_fresh_store.service.googleDrive.GoogleDriveService;
+import com.kira.farm_fresh_store.utils.AuthenUtil;
+import com.kira.farm_fresh_store.utils.FeedBackMessage;
 import com.kira.farm_fresh_store.utils.enums.ETypeAccount;
 import com.kira.farm_fresh_store.utils.enums.ETypeUser;
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
+import com.kira.farm_fresh_store.utils.enums.ErrorCode;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
-import org.apache.http.auth.AuthenticationException;
 
 import java.io.IOException;
 import java.util.List;
@@ -56,9 +56,12 @@ public class UserService implements IUserService {
 
     private final ErrorNormalizer errorNormalizer;
 
+
     @Override
     public TokenExchangeResponse login(LoginRequest loginRequest) {
-            var token = identityClient.exchangeTokenClient(ClientTokenExchangeParam.builder()
+        try {
+            // Thực hiện gọi Token Exchange
+            TokenExchangeResponse token = identityClient.exchangeTokenClient(ClientTokenExchangeParam.builder()
                     .grant_type("password")
                     .client_id(keycloakProvider.getClientID())
                     .client_secret(keycloakProvider.getClientSecret())
@@ -66,9 +69,16 @@ public class UserService implements IUserService {
                     .password(loginRequest.getPassword())
                     .scope("openid")
                     .build());
-            log.info("TokenInfo {}", token);
             return token;
+        } catch (FeignException.Unauthorized exception) {
+            // Xử lý lỗi Unauthorized (401) từ Keycloak
+            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+        } catch (FeignException exception) {
+            // Xử lý các lỗi khác từ Feign (ví dụ: lỗi mạng, timeout)
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
+
 
     @Override
     public User register(RegisterUserModel registerUserModel) {
@@ -122,10 +132,10 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public User uploadImage(MultipartFile file, String userId) throws IOException {
+    public String uploadImage(MultipartFile file, String userId) throws IOException {
         // Tìm người dùng theo userId
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
 
         // Upload ảnh lên Google Drive và nhận URL
         String imageUrl = googleDriveService.uploadImageToDrive(file);
@@ -143,9 +153,23 @@ public class UserService implements IUserService {
             user.setPhoto(photo);
 
             // Lưu người dùng với ảnh mới
-            return userRepository.save(user);
+            userRepository.save(user);
+
+            // Trả về URL ảnh
+            return imageUrl;
         }
         return null;
+    }
+
+    @Override
+    public UserDto getUserById() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userId = authentication.getName();
+
+        User profile = userRepository.findByUserId(userId).orElseThrow(
+                () -> new ResourceNotFoundException(FeedBackMessage.NOT_USER_FOUND));
+
+        return entityConverter.mapEntityToDto(profile, UserDto.class);
     }
 
 
@@ -153,5 +177,75 @@ public class UserService implements IUserService {
         String location = response.getHeaders().get("Location").get(0);
         String[] splitedStr = location.split("/");
         return splitedStr[splitedStr.length - 1];
+    }
+
+    @Override
+    public UserDto updateUser(UpdateUserRequest request) {
+        String profileId = AuthenUtil.getProfileId();
+
+        User theUser = userRepository.findByUserId(profileId)
+                .orElseThrow(() -> new ResourceNotFoundException(FeedBackMessage.NOT_USER_FOUND));
+        var token = identityClient.exchangeToken(TokenExchangeParam.builder()
+                .grant_type("client_credentials")
+                .client_id(keycloakProvider.getClientID())
+                .client_secret(keycloakProvider.getClientSecret())
+                .scope("openid").build());
+        var response = identityClient.updateUser(
+                "Bearer " + token.getAccessToken(),
+                profileId,
+                UpdateRequestParam.builder()
+                        .email(request.getEmail())
+                        .firstName(request.getFirstName())
+                        .lastName(request.getLastName())
+                        .build()
+        );
+
+        theUser.setFirstName(request.getFirstName());
+        theUser.setLastName(request.getLastName());
+        theUser.setEmail(request.getEmail());
+        userRepository.save(theUser);
+
+        return entityConverter.mapEntityToDto(theUser, UserDto.class);
+    }
+
+    @Override
+    public Boolean deleteUser(String profileId) {
+        try {
+            User theUser = userRepository.findById(profileId)
+                    .orElseThrow(() -> new ResourceNotFoundException(FeedBackMessage.NOT_USER_FOUND));
+            var token = identityClient.exchangeToken(TokenExchangeParam.builder()
+                    .grant_type("client_credentials")
+                    .client_id(keycloakProvider.getClientID())
+                    .client_secret(keycloakProvider.getClientSecret())
+                    .scope("openid").build());
+            identityClient.deleteUser(
+                    "Bearer " + token.getAccessToken(),
+                    theUser.getUserId());
+            userRepository.delete(theUser);
+            return true;
+        } catch (FeignException exception) {
+            throw errorNormalizer.handleKeyCloakException(exception);
+        }
+    }
+
+    @Override
+    public Boolean resetPassword(ResetPasswordRequest request) {
+        String profileId = AuthenUtil.getProfileId();
+
+        User theUser = userRepository.findByUserId(profileId)
+                .orElseThrow(() -> new ResourceNotFoundException(FeedBackMessage.NOT_USER_FOUND));
+        var token = identityClient.exchangeToken(TokenExchangeParam.builder()
+                .grant_type("client_credentials")
+                .client_id(keycloakProvider.getClientID())
+                .client_secret(keycloakProvider.getClientSecret())
+                .scope("openid").build());
+        var response = identityClient.resetPassword(
+                "Bearer " + token.getAccessToken(),
+                profileId,
+                Credential.builder()
+                        .temporary(false)
+                        .type("password")
+                        .value(request.getNewPassword()).build());
+        return true;
     }
 }

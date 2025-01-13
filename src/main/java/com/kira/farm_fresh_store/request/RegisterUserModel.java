@@ -1,4 +1,4 @@
-package com.kira.farm_fresh_store.dto;
+package com.kira.farm_fresh_store.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

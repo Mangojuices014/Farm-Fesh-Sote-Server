@@ -22,7 +22,7 @@ public class GoogleDriveService {
     private Drive getDriveService() throws IOException {
         // Load credentials from JSON file
         GoogleCredentials credentials = GoogleCredentials.fromStream(
-                        Objects.requireNonNull(getClass().getResourceAsStream("/cdt.json")))
+                        Objects.requireNonNull(getClass().getResourceAsStream("/credential.json")))
                 .createScoped(Collections.singleton(DriveScopes.DRIVE_FILE));
         return new Drive.Builder(new com.google.api.client.http.javanet.NetHttpTransport(),
                 com.google.api.client.json.jackson2.JacksonFactory.getDefaultInstance(),

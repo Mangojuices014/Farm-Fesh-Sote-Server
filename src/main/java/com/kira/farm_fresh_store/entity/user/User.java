@@ -31,8 +31,6 @@ public class User extends BaseEntity {
 
     private String userName;
 
-    private String password;
-
     private String lastName;
 
     private String firstName;
