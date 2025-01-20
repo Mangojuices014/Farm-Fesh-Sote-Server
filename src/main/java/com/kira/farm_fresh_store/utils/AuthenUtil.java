@@ -4,8 +4,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 public class AuthenUtil {
-    public static String getProfileId(){
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return auth.getName();
+    public static Long getProfileId(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String name = authentication.getName();
+        String[] parts = name.split(":");
+        Long userId = Long.valueOf(parts[2]);
+        return userId;
     }
 }

@@ -48,25 +48,6 @@ public class UserController {
     }
 
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<String>> uploadPhoto(
-            @RequestPart(name = "fileImg", required = true) MultipartFile file,
-            @RequestParam String profileId) throws IOException {
-        try {
-            // Gọi service để upload ảnh và lấy URL
-            String photoUrl = userService.uploadImage(file, profileId);
-
-            // Kiểm tra nếu URL hợp lệ
-            if (photoUrl != null && !photoUrl.isEmpty()) {
-                return ResponseEntity.status(OK).body(new ApiResponse<String>(FeedBackMessage.UPLOAD_PHOTO, photoUrl));
-            } else {
-                return ResponseEntity.status(BAD_REQUEST).body(new ApiResponse<String>("Ảnh không hợp lệ", null));
-            }
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(BAD_REQUEST).body(new ApiResponse<String>(FeedBackMessage.NOT_USER_FOUND, null));
-        }
-    }
-
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<UserDto>> getUserById() {
         try {
@@ -108,11 +89,11 @@ public class UserController {
         }
     }
 
-    @DeleteMapping("/delete/{profileId}")
+    @DeleteMapping("/delete/{userId}")
     @Operation(summary = "API thay đổi thông tin người dùng")
-    public ResponseEntity<ApiResponse<?>> deleteUser(@PathVariable String profileId) {
+    public ResponseEntity<ApiResponse<?>> deleteUser(@PathVariable Long userId) {
         try {
-            boolean theUser = userService.deleteUser(profileId);
+            boolean theUser = userService.deleteUser(userId);
             return ResponseEntity.status(OK)
                     .body(new ApiResponse<>(FeedBackMessage.UPDATE_USER, theUser));
 

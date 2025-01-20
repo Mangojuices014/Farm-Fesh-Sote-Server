@@ -55,7 +55,7 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) {
                 registry.addMapping("/**") // Apply to all endpoints
-                        .allowedOrigins("http://localhost:4200", "http://localhost:5173") // Liệt kê các nguồn gốc cụ thể
+                        .allowedOrigins("http://localhost:4200", "http://localhost:5174") // Liệt kê các nguồn gốc cụ thể
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Allow these HTTP methods
                         .allowedHeaders("*") // Allow all headers
                         .allowCredentials(true); // Allow credentials

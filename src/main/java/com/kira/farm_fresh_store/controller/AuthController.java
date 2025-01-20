@@ -33,15 +33,13 @@ public class AuthController {
     @Operation(summary = "API đăng kí tài khoản mới")
     public ResponseEntity<ApiResponse<UserDto>> register(
             @RequestBody @Valid RegisterUserModel registerUserModel) {
+            // Thực hiện đăng ký người dùng
+            User userRegister = userService.register(registerUserModel);
+            UserDto registeredUser = entityConverter.mapEntityToDto(userRegister, UserDto.class);
 
-        // Thực hiện đăng ký người dùng
-        User userRegister = userService.register(registerUserModel);
-        UserDto registeredUser = entityConverter.mapEntityToDto(userRegister, UserDto.class);
-
-        // Trả về ApiResponse với thông báo thành công
-        return ResponseEntity.status(CREATED)
-                .body(new ApiResponse<>(FeedBackMessage.CREATE_USER_SUCCESS, registeredUser));
-
+            // Trả về ApiResponse với thông báo thành công
+            return ResponseEntity.status(CREATED)
+                    .body(new ApiResponse<>(FeedBackMessage.CREATE_USER_SUCCESS, registeredUser));
     }
 
     @PostMapping("/login")
@@ -59,6 +57,4 @@ public class AuthController {
                     .body(new ApiResponse<>(FeedBackMessage.INTERNAL_LOGIN_ERROR, null));
         }
     }
-
-
 }

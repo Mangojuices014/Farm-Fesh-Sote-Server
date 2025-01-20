@@ -1,7 +1,6 @@
 package com.kira.farm_fresh_store.entity.user;
 
 import com.kira.farm_fresh_store.entity.BaseEntity;
-import com.kira.farm_fresh_store.entity.Photo;
 import com.kira.farm_fresh_store.utils.enums.ETypeAccount;
 import com.kira.farm_fresh_store.utils.enums.ETypeUser;
 import jakarta.persistence.*;
@@ -18,35 +17,23 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class User extends BaseEntity {
+public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String profileId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    private String userId;
-
-    @Email
-    @NotNull
-    private String email;
-
-    private String userName;
-
-    private String lastName;
-
+    @Column(name = "firstname", nullable = false, length = 50)
     private String firstName;
 
-    private boolean enabled;
+    @Column(name = "lastname", nullable = false, length = 50)
+    private String lastName;
 
-    @Enumerated(EnumType.STRING)
-    private ETypeUser typeUser;;
+    @Column(name = "email", nullable = false, unique = true, length = 100)
+    private String email;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
-    private Photo photo;
+    @Column(name = "username", nullable = false, unique = true, length = 50)
+    private String username;
 
-//    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-//    private Address address = new Address();
-
-    @Enumerated(EnumType.STRING)
-    private ETypeAccount type_account;
-
+    @Column(name = "password", nullable = false, length = 255)
+    private String password;
 }
