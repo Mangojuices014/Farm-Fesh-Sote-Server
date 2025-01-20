@@ -9,8 +9,12 @@ import lombok.Data;
 
 @Data
 public class UserDto {
+    private String profileId;
     private String email;
-    private String username;
+    private String userName;
     private String lastName;
     private String firstName;
+    private boolean enabled;
+    private ETypeUser typeUser;
+    private ETypeAccount type_account;
 }

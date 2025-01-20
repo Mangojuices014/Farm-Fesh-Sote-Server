@@ -18,6 +18,7 @@ public interface IUserService {
 
     List<UserDto> getAllUsers();
 
+    String uploadImage(MultipartFile file, String userId) throws IOException;
 
     TokenExchangeResponse login(LoginRequest loginRequest);
 
@@ -25,8 +26,10 @@ public interface IUserService {
 
     UserDto updateUser(UpdateUserRequest request);
 
-    Boolean deleteUser(Long userId);
+    Boolean deleteUser(String userId);
 
     Boolean resetPassword(ResetPasswordRequest newPassword);
+
+
 
 }
