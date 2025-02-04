@@ -17,8 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import static org.springframework.http.HttpStatus.CREATED;
-import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -33,6 +32,7 @@ public class AuthController {
     @Operation(summary = "API đăng kí tài khoản mới")
     public ResponseEntity<ApiResponse<UserDto>> register(
             @RequestBody @Valid RegisterUserModel registerUserModel) {
+        try {
             // Thực hiện đăng ký người dùng
             User userRegister = userService.register(registerUserModel);
             UserDto registeredUser = entityConverter.mapEntityToDto(userRegister, UserDto.class);
@@ -40,6 +40,10 @@ public class AuthController {
             // Trả về ApiResponse với thông báo thành công
             return ResponseEntity.status(CREATED)
                     .body(new ApiResponse<>(FeedBackMessage.CREATE_USER_SUCCESS, registeredUser));
+        } catch (Exception e) {
+            return ResponseEntity.status(BAD_REQUEST)
+                    .body(new ApiResponse<>(FeedBackMessage.USER_EXISTED, null));
+        }
     }
 
     @PostMapping("/login")

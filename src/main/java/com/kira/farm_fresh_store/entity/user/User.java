@@ -36,4 +36,12 @@ public class User {
 
     @Column(name = "password", nullable = false, length = 255)
     private String password;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "userdetail_id", referencedColumnName = "id")
+    private UserDetail userDetail;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "address_id", referencedColumnName = "id")
+    private Address address;
 }

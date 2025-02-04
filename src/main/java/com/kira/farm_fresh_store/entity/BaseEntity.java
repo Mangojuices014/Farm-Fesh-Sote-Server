@@ -1,26 +1,25 @@
 package com.kira.farm_fresh_store.entity;
 
 import jakarta.persistence.*;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.sql.Timestamp;
-import java.util.Date;
+import java.time.LocalDateTime;
+
 @MappedSuperclass
+@EntityListeners(AuditingEntityListener.class) // Kích hoạt Auditing
 @Getter
 @Setter
 public abstract class BaseEntity {
-
     @Column(name = "created_date")
     @CreatedDate
-    private String createdDate = new Timestamp(new Date().getTime()).toString();
+    private LocalDateTime createdDate; // Sử dụng LocalDateTime thay vì String
 
     @Column(name = "updated_date")
-    @CreatedDate
-    private String updatedDate = new Timestamp(new Date().getTime()).toString();
+    @LastModifiedDate // Sử dụng @LastModifiedDate thay vì @CreatedDate
+    private LocalDateTime updatedDate; // Sử dụng LocalDateTime thay vì String
 }
