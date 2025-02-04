@@ -30,28 +30,7 @@ public class UserDetail extends BaseEntity {
     @Column(name = "phone_number", length = 15)
     private String phoneNumber;
 
-    @Column(name = "emergency_contact_name", length = 100)
-    private String emergencyContactName;
-
-    @Column(name = "emergency_contact_phone", length = 15)
-    private String emergencyContactPhone;
-
-    @Column(name = "occupation", length = 100)
-    private String occupation;
-
     @Column(name = "company", length = 100)
     private String company;
-
-    @Column(name = "job_title", length = 100)
-    private String jobTitle;
-
-    @Column(name = "social_media_links", length = 255)
-    private String socialMediaLinks;
-
-    @Column(name = "profile_picture", length = 255)
-    private String profilePicture;
-
-    @Column(name = "bio", length = 500)
-    private String bio;
 
 }
