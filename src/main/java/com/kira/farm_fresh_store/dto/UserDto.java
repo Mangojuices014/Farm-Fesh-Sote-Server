@@ -1,16 +1,15 @@
 package com.kira.farm_fresh_store.dto;
 
-import com.kira.farm_fresh_store.utils.enums.ETypeAccount;
-import com.kira.farm_fresh_store.utils.enums.ETypeUser;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserDto {
+    private Long id;
+    private String firstName;
+    private String lastName;
     private String email;
     private String username;
-    private String lastName;
-    private String firstName;
 }

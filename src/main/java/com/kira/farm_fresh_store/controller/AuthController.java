@@ -2,9 +2,8 @@ package com.kira.farm_fresh_store.controller;
 
 import com.kira.farm_fresh_store.dto.EntityConverter;
 import com.kira.farm_fresh_store.dto.identity.TokenExchangeResponse;
-import com.kira.farm_fresh_store.exception.AppException;
-import com.kira.farm_fresh_store.request.LoginRequest;
-import com.kira.farm_fresh_store.request.RegisterUserModel;
+import com.kira.farm_fresh_store.request.user.LoginRequest;
+import com.kira.farm_fresh_store.request.user.RegisterUserModel;
 import com.kira.farm_fresh_store.dto.UserDto;
 import com.kira.farm_fresh_store.entity.user.User;
 import com.kira.farm_fresh_store.response.ApiResponse;
@@ -16,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.security.sasl.AuthenticationException;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -40,9 +41,12 @@ public class AuthController {
             // Trả về ApiResponse với thông báo thành công
             return ResponseEntity.status(CREATED)
                     .body(new ApiResponse<>(FeedBackMessage.CREATE_USER_SUCCESS, registeredUser));
+        }catch (IllegalArgumentException  e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(e.getMessage(), null));
         } catch (Exception e) {
-            return ResponseEntity.status(BAD_REQUEST)
-                    .body(new ApiResponse<>(FeedBackMessage.USER_EXISTED, null));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Lỗi đăng ký", null));
         }
     }
 
@@ -51,14 +55,12 @@ public class AuthController {
         try {
             TokenExchangeResponse tokenResponse = userService.login(loginRequest);
             return ResponseEntity.ok(new ApiResponse<>(FeedBackMessage.LOGIN_SUCCESS, tokenResponse));
-        } catch (AppException ex) {
-            // Trả về lỗi với thông báo từ AppException
+        } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>(ex.getMessage(), null));
-        } catch (Exception ex) {
-            // Trường hợp lỗi không xác định
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(FeedBackMessage.INTERNAL_LOGIN_ERROR, null));
+                    .body(new ApiResponse<>("Lỗi máy chủ", null));
         }
     }
 }

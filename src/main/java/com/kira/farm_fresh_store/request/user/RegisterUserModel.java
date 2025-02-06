@@ -1,4 +1,4 @@
-package com.kira.farm_fresh_store.request;
+package com.kira.farm_fresh_store.request.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -38,5 +38,6 @@ public class RegisterUserModel implements Serializable {
     @NotNull(message = "firstName is REQUIRED")
     @Size(max = 50, message = "firstName limit is 50 characters")
     private String firstName;
+
 
 }

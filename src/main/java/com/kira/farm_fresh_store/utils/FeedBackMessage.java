@@ -15,5 +15,6 @@ public class FeedBackMessage {
     public static final String INVALID_PASSWORD_USERNAME = "Tên người dùng hoặc mật khẩu không hợp lệ";
     public static final String LOGIN_SUCCESS = "Đăng nhập thành công";
     public static final String INTERNAL_LOGIN_ERROR = "Lỗi đăng nhập";
+    public static final String SUCCESS = "Thành công";
     /*======================== End User API=====================================*/
 }

@@ -11,15 +11,15 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @MappedSuperclass
-@EntityListeners(AuditingEntityListener.class) // Kích hoạt Auditing
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 public abstract class BaseEntity {
     @Column(name = "created_date")
     @CreatedDate
-    private LocalDateTime createdDate; // Sử dụng LocalDateTime thay vì String
+    private LocalDateTime createdDate;
 
     @Column(name = "updated_date")
-    @LastModifiedDate // Sử dụng @LastModifiedDate thay vì @CreatedDate
-    private LocalDateTime updatedDate; // Sử dụng LocalDateTime thay vì String
+    @LastModifiedDate
+    private LocalDateTime updatedDate;
 }

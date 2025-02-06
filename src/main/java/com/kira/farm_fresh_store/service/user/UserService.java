@@ -1,36 +1,27 @@
 package com.kira.farm_fresh_store.service.user;
 
 import com.kira.farm_fresh_store.dto.EntityConverter;
-import com.kira.farm_fresh_store.exception.AppException;
-import com.kira.farm_fresh_store.request.LoginRequest;
-import com.kira.farm_fresh_store.request.RegisterUserModel;
+import com.kira.farm_fresh_store.request.user.LoginRequest;
+import com.kira.farm_fresh_store.request.user.RegisterUserModel;
 import com.kira.farm_fresh_store.dto.UserDto;
 import com.kira.farm_fresh_store.dto.identity.*;
 import com.kira.farm_fresh_store.entity.user.User;
-import com.kira.farm_fresh_store.exception.ErrorNormalizer;
 import com.kira.farm_fresh_store.exception.ResourceNotFoundException;
 import com.kira.farm_fresh_store.repository.UserRepository;
-import com.kira.farm_fresh_store.request.ResetPasswordRequest;
-import com.kira.farm_fresh_store.request.user.UpdateRequestParam;
+import com.kira.farm_fresh_store.request.user.ResetPasswordRequest;
 import com.kira.farm_fresh_store.request.user.UpdateUserRequest;
 import com.kira.farm_fresh_store.response.keycloak.IdentityClient;
 import com.kira.farm_fresh_store.utils.AuthenUtil;
 import com.kira.farm_fresh_store.utils.FeedBackMessage;
-import com.kira.farm_fresh_store.utils.enums.ETypeAccount;
-import com.kira.farm_fresh_store.utils.enums.ETypeUser;
-import com.kira.farm_fresh_store.utils.enums.ErrorCode;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import javax.security.sasl.AuthenticationException;
 import java.util.List;
 
 @Service
@@ -48,15 +39,13 @@ public class UserService implements IUserService {
 
     private final EntityConverter<User, UserDto> entityConverter;
 
-    private final ErrorNormalizer errorNormalizer;
     private final BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
 
 
     @Override
-    public TokenExchangeResponse login(LoginRequest loginRequest) {
+    public TokenExchangeResponse login(LoginRequest loginRequest) throws AuthenticationException {
         try {
-            // Thực hiện gọi Token Exchange
-            TokenExchangeResponse token = identityClient.exchangeTokenClient(ClientTokenExchangeParam.builder()
+            return identityClient.exchangeTokenClient(ClientTokenExchangeParam.builder()
                     .grant_type("password")
                     .client_id(keycloakProvider.getClientID())
                     .client_secret(keycloakProvider.getClientSecret())
@@ -64,27 +53,32 @@ public class UserService implements IUserService {
                     .password(loginRequest.getPassword())
                     .scope("openid")
                     .build());
-            return token;
-        } catch (FeignException.Unauthorized exception) {
-            // Xử lý lỗi Unauthorized (401) từ Keycloak
-            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
-        } catch (FeignException exception) {
-            // Xử lý các lỗi khác từ Feign (ví dụ: lỗi mạng, timeout)
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        } catch (FeignException.Unauthorized e) {
+            throw new AuthenticationException("Sai tên đăng nhập hoặc mật khẩu.");
+        } catch (FeignException e) {
+            throw new AuthenticationException("Lỗi xác thực : " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi hệ thống khi đăng nhập.", e);
         }
     }
 
-
     @Override
     public User register(RegisterUserModel registerUserModel) {
-        try {
-            User user = modelMapper.map(registerUserModel, User.class);
-            user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-            userRepository.save(user);
-            return user;
-        } catch (FeignException exception) {
-            throw errorNormalizer.handleKeyCloakException(exception);
+        // Kiểm tra username đã tồn tại chưa
+        if (userRepository.existsByUsername(registerUserModel.getUserName())) {
+            throw new IllegalArgumentException("Username đã tồn tại");
         }
+
+        // Kiểm tra email đã tồn tại chưa
+        if (userRepository.existsByEmail(registerUserModel.getEmail())) {
+            throw new IllegalArgumentException("Email đã tồn tại");
+        }
+
+        // Nếu không bị trùng, tiếp tục tạo user
+        User user = modelMapper.map(registerUserModel, User.class);
+        user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+
+        return userRepository.save(user);
     }
 
 
@@ -131,14 +125,10 @@ public class UserService implements IUserService {
 
     @Override
     public Boolean deleteUser(Long userId) {
-        try {
             User theUser = userRepository.findById(userId)
                     .orElseThrow(() -> new ResourceNotFoundException(FeedBackMessage.NOT_USER_FOUND));
             userRepository.delete(theUser);
             return true;
-        } catch (FeignException exception) {
-            throw errorNormalizer.handleKeyCloakException(exception);
-        }
     }
 
     @Override
@@ -150,5 +140,9 @@ public class UserService implements IUserService {
         theUser.setPassword(bCryptPasswordEncoder.encode(request.getNewPassword()));
         userRepository.save(theUser);
         return true;
+    }
+
+    public void saveAllUsers(List<User> users) {
+        userRepository.saveAll(users);
     }
 }

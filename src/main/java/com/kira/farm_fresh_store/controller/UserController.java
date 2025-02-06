@@ -4,8 +4,7 @@ import com.kira.farm_fresh_store.dto.EntityConverter;
 import com.kira.farm_fresh_store.dto.UserDto;
 import com.kira.farm_fresh_store.entity.user.User;
 import com.kira.farm_fresh_store.exception.ResourceNotFoundException;
-import com.kira.farm_fresh_store.request.ResetPasswordRequest;
-import com.kira.farm_fresh_store.request.user.UpdateRequestParam;
+import com.kira.farm_fresh_store.request.user.ResetPasswordRequest;
 import com.kira.farm_fresh_store.request.user.UpdateUserRequest;
 import com.kira.farm_fresh_store.response.ApiResponse;
 import com.kira.farm_fresh_store.service.user.UserService;
@@ -14,15 +13,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -41,7 +35,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<List<UserDto>>> getAllUsers() {
         // Lấy tất cả người dùng từ service
         List<UserDto> users = userService.getAllUsers();
-
+    
         // Trả về danh sách người dùng trong ApiResponse
         return ResponseEntity.status(HttpStatus.OK) // Đổi từ FOUND sang OK (200)
                 .body(new ApiResponse<>(FeedBackMessage.USER_FOUND, users));

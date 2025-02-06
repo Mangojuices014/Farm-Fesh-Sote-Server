@@ -1,15 +1,14 @@
 package com.kira.farm_fresh_store.service.user;
 
-import com.kira.farm_fresh_store.request.LoginRequest;
-import com.kira.farm_fresh_store.request.RegisterUserModel;
+import com.kira.farm_fresh_store.request.user.LoginRequest;
+import com.kira.farm_fresh_store.request.user.RegisterUserModel;
 import com.kira.farm_fresh_store.dto.UserDto;
 import com.kira.farm_fresh_store.dto.identity.TokenExchangeResponse;
 import com.kira.farm_fresh_store.entity.user.User;
-import com.kira.farm_fresh_store.request.ResetPasswordRequest;
+import com.kira.farm_fresh_store.request.user.ResetPasswordRequest;
 import com.kira.farm_fresh_store.request.user.UpdateUserRequest;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import javax.security.sasl.AuthenticationException;
 import java.util.List;
 
 public interface IUserService {
@@ -19,7 +18,7 @@ public interface IUserService {
     List<UserDto> getAllUsers();
 
 
-    TokenExchangeResponse login(LoginRequest loginRequest);
+    TokenExchangeResponse login(LoginRequest loginRequest) throws AuthenticationException;
 
     UserDto getUserById();
 
