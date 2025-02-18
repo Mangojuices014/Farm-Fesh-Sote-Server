@@ -1,7 +1,7 @@
 package com.kira.farm_fresh_store.controller;
 
 import com.kira.farm_fresh_store.dto.EntityConverter;
-import com.kira.farm_fresh_store.dto.UserDto;
+import com.kira.farm_fresh_store.dto.user.UserDto;
 import com.kira.farm_fresh_store.entity.user.User;
 import com.kira.farm_fresh_store.exception.ResourceNotFoundException;
 import com.kira.farm_fresh_store.request.user.ResetPasswordRequest;

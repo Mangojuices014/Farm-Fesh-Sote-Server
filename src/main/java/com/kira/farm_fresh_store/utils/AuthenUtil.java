@@ -8,7 +8,6 @@ public class AuthenUtil {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String name = authentication.getName();
         String[] parts = name.split(":");
-        Long userId = Long.valueOf(parts[2]);
-        return userId;
+        return Long.valueOf(parts[2]);
     }
 }

@@ -1,4 +1,4 @@
-package com.kira.farm_fresh_store.dto;
+package com.kira.farm_fresh_store.dto.user;
 
 import lombok.*;
 

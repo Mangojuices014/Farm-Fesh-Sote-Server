@@ -1,6 +1,6 @@
 package com.kira.farm_fresh_store.service.report;
 
-import com.kira.farm_fresh_store.dto.UserDto;
+import com.kira.farm_fresh_store.dto.user.UserDto;
 import com.kira.farm_fresh_store.entity.user.User;
 import com.kira.farm_fresh_store.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

@@ -1,24 +1,22 @@
-package com.kira.farm_fresh_store.entity.product;
+package com.kira.farm_fresh_store.dto.product;
 
-import com.kira.farm_fresh_store.entity.BaseEntity;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Entity
-@Table(name="products")
-public class Product extends BaseEntity {
-    @Id
+public class ProductDto {
     private String id;
     private String sku;
     private String name;
     private String description;
     private Double price;
     private int quantity;
-    @Column(name = "photo", columnDefinition = "TEXT")
     private String image;
     private boolean active;
     private String material;
