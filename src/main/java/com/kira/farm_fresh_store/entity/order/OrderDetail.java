@@ -1,8 +1,8 @@
 package com.kira.farm_fresh_store.entity.order;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.kira.farm_fresh_store.entity.BaseEntity;
 import com.kira.farm_fresh_store.entity.product.Product;
+import com.kira.farm_fresh_store.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
