@@ -2,11 +2,14 @@ package com.kira.farm_fresh_store.controller;
 
 import com.kira.farm_fresh_store.dto.order.OrderDto;
 import com.kira.farm_fresh_store.exception.ResourceNotFoundException;
+import com.kira.farm_fresh_store.exception.UserNotAuthenticatedException;
 import com.kira.farm_fresh_store.request.order.CreateOrderRequest;
 import com.kira.farm_fresh_store.response.ApiResponse;
 import com.kira.farm_fresh_store.service.order.OrderService;
 import com.kira.farm_fresh_store.utils.FeedBackMessage;
 import lombok.RequiredArgsConstructor;
+import org.camunda.bpm.engine.RuntimeService;
+import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,11 +23,14 @@ import static org.springframework.http.HttpStatus.*;
 @RequiredArgsConstructor
 public class OrderController {
 
+    private final RuntimeService runtimeService;
+
     private final OrderService orderService;
 
     @PostMapping("/create-order")
     public ResponseEntity<ApiResponse<OrderDto>> createOrder(@RequestBody CreateOrderRequest orderDto) {
         try {
+            
             OrderDto order = orderService.createOrder(orderDto);
             // Trả về ApiResponse với thông báo thành công
             return ResponseEntity.status(CREATED)
@@ -33,10 +39,11 @@ public class OrderController {
             // Trả về ApiResponse với thông báo thành công
             return ResponseEntity.status(BAD_REQUEST)
                     .body(new ApiResponse<>(e.getMessage(), null));
-        }catch (Exception e) {
+        }catch (UserNotAuthenticatedException e) {
             // Trả về ApiResponse với thông báo thành công
-            return ResponseEntity.status(INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(UNAUTHORIZED)
                     .body(new ApiResponse<>(e.getMessage(), null));
         }
     }
+
 }

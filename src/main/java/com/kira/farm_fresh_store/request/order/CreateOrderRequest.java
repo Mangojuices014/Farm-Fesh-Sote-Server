@@ -13,7 +13,6 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateOrderRequest {
-    private Long user_id;
     private String orderInfo;
     private List<OrderDetailRequest> order_details;
 }

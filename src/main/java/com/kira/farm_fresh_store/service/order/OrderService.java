@@ -7,15 +7,22 @@ import com.kira.farm_fresh_store.entity.order.OrderDetail;
 import com.kira.farm_fresh_store.entity.product.Product;
 import com.kira.farm_fresh_store.entity.user.User;
 import com.kira.farm_fresh_store.exception.ResourceNotFoundException;
+import com.kira.farm_fresh_store.exception.UserNotAuthenticatedException;
 import com.kira.farm_fresh_store.repository.OrderRepository;
 import com.kira.farm_fresh_store.repository.ProductRepository;
 import com.kira.farm_fresh_store.repository.UserRepository;
 import com.kira.farm_fresh_store.request.order.CreateOrderRequest;
 import com.kira.farm_fresh_store.request.order.OrderDetailRequest;
+import com.kira.farm_fresh_store.utils.AuthenUtil;
 import com.kira.farm_fresh_store.utils.Util;
 import com.kira.farm_fresh_store.utils.enums.Status;
 import lombok.RequiredArgsConstructor;
+import org.camunda.bpm.engine.RuntimeService;
+import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -26,6 +33,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class OrderService implements IOrderService {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+
+    private final RuntimeService runtimeService;
 
     private final OrderRepository orderRepository;
 
@@ -39,10 +50,15 @@ public class OrderService implements IOrderService {
 
     @Override
     public OrderDto createOrder(CreateOrderRequest request) {
+        ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("Process_1uxj2sj", util.generateRandomID());
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+            throw new ResourceNotFoundException("Bạn vẫn chưa đăng nhập");
+        }
+        long userId = AuthenUtil.getProfileId();
         // Kiểm tra và lấy User từ user_id
-        User user = userRepository.findById(request.getUser_id())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ID người dùng"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotAuthenticatedException("Không tìm thấy ID người dùng"));
 
         // Tạo Order mới
         Order order = new Order();
@@ -53,6 +69,7 @@ public class OrderService implements IOrderService {
             order.setId(util.createIDFromLastID("OD", 2, lastOrder.getId()));
         }
         order.setUser(user);
+        order.setBussinessKey(processInstance.getBusinessKey());
         order.setStatus(Status.NEW);
         order.setOrderInfo(request.getOrderInfo());
         double totalPrice = 0;

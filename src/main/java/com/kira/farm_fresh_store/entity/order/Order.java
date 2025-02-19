@@ -20,6 +20,7 @@ import java.util.List;
 public class Order extends BaseEntity {
     @Id
     private String id;
+    private String bussinessKey;
     @Column(name = "total_price")
     private Double totalPrice;
     @Column(name = "total_item")
