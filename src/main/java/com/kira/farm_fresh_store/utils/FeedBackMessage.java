@@ -16,5 +16,6 @@ public class FeedBackMessage {
     public static final String LOGIN_SUCCESS = "Đăng nhập thành công";
     public static final String INTERNAL_LOGIN_ERROR = "Lỗi đăng nhập";
     public static final String SUCCESS = "Thành công";
+    public static final String UN_SUCCESS = "Thất bại";
     /*======================== End User API=====================================*/
 }

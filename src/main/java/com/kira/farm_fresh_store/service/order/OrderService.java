@@ -18,7 +18,9 @@ import com.kira.farm_fresh_store.utils.Util;
 import com.kira.farm_fresh_store.utils.enums.Status;
 import lombok.RequiredArgsConstructor;
 import org.camunda.bpm.engine.RuntimeService;
+import org.camunda.bpm.engine.TaskService;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
+import org.camunda.bpm.engine.task.Task;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +30,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -46,21 +51,51 @@ public class OrderService implements IOrderService {
 
     private final UserRepository userRepository;
 
+    private final TaskService taskService;
+
     private final Util util;
 
     @Override
     public OrderDto createOrder(CreateOrderRequest request) {
-        ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("Process_1uxj2sj", util.generateRandomID());
+        // 1. Khởi chạy quy trình Camunda
+        ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(
+                "Process_1uxj2sj", util.generateRandomID());
+
+        // 2. Lấy task "Kiểm tra đăng nhập"
+        Task task = taskService.createTaskQuery()
+                .processInstanceId(processInstance.getId())
+                .singleResult();
+
+        // 3. Kiểm tra đăng nhập
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
-            throw new ResourceNotFoundException("Bạn vẫn chưa đăng nhập");
+        boolean isAuthenticated = authentication != null && !(authentication instanceof AnonymousAuthenticationToken);
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("auth", isAuthenticated);
+        variables.put("productIds", request.getOrder_details().stream()
+                .map(OrderDetailRequest::getProduct_id)
+                .collect(Collectors.toList()));
+
+        for (OrderDetailRequest detail : request.getOrder_details()) {
+            variables.put("quantityOrder_" + detail.getProduct_id(), detail.getQuantityOrder());
         }
+
+        // Nếu có task thì hoàn thành nó với biến auth
+        if (task != null) {
+            taskService.complete(task.getId(), variables);
+        }
+
+        // 4. Nếu không đăng nhập, ném lỗi
+        if (!isAuthenticated) {
+            throw new UserNotAuthenticatedException("Bạn vẫn chưa đăng nhập");
+        }
+
+        // 5. Lấy user ID từ token
         long userId = AuthenUtil.getProfileId();
-        // Kiểm tra và lấy User từ user_id
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotAuthenticatedException("Không tìm thấy ID người dùng"));
 
-        // Tạo Order mới
+        // 6. Tạo Order mới
         Order order = new Order();
         Order lastOrder = orderRepository.findFirstByOrderByIdDesc();
         if (lastOrder == null) {
@@ -72,11 +107,11 @@ public class OrderService implements IOrderService {
         order.setBussinessKey(processInstance.getBusinessKey());
         order.setStatus(Status.NEW);
         order.setOrderInfo(request.getOrderInfo());
+
         double totalPrice = 0;
         int totalItem = 0;
         List<OrderDetail> orderDetails = new ArrayList<>();
 
-        // Lặp qua danh sách order_details để tạo OrderDetail
         for (OrderDetailRequest orderDetailDto : request.getOrder_details()) {
             Product product = productRepository.findById(orderDetailDto.getProduct_id())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
@@ -84,26 +119,23 @@ public class OrderService implements IOrderService {
             OrderDetail orderDetail = new OrderDetail();
             orderDetail.setOrder(order);
             orderDetail.setProduct(product);
-            orderDetail.setQuantity(orderDetailDto.getQuantity());
-            orderDetail.setPrice(product.getPrice() * orderDetailDto.getQuantity());
+            orderDetail.setQuantityOrder(orderDetailDto.getQuantityOrder());
+            orderDetail.setPrice(product.getPrice() * orderDetailDto.getQuantityOrder());
             orderDetail.setColor(orderDetailDto.getColor());
 
-            // Cộng tổng giá và tổng số lượng sản phẩm
             totalPrice += orderDetail.getPrice();
-            totalItem += orderDetail.getQuantity();
+            totalItem += orderDetail.getQuantityOrder();
 
             orderDetails.add(orderDetail);
         }
 
-        // Gán danh sách OrderDetail vào Order
         order.setOrderDetails(orderDetails);
         order.setTotalPrice(totalPrice);
         order.setTotalItem(totalItem);
 
-        // Lưu Order vào database (do Cascade.ALL, OrderDetails sẽ tự động lưu)
         Order savedOrder = orderRepository.save(order);
 
-        // Convert Order sang OrderDto và trả về
         return modelMapper.map(savedOrder, OrderDto.class);
     }
+
 }

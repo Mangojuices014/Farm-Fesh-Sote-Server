@@ -17,7 +17,7 @@ public class OrderDetail extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
-    private Integer quantity;
+    private Integer quantityOrder;
     private Double price;
     private String color;
     @ManyToOne(fetch = FetchType.LAZY)

@@ -17,7 +17,7 @@ public class Product extends BaseEntity {
     private String name;
     private String description;
     private Double price;
-    private int quantity;
+    private Integer quantityProduct;
     @Column(name = "photo", columnDefinition = "TEXT")
     private String image;
     private boolean active;

@@ -12,7 +12,7 @@ public class CreateProductRequest {
     private String name;
     private String description;
     private Double price;
-    private int quantity;
+    private int quantityProduct;
     private String image;
     private String material;
     private String sizeWeight;

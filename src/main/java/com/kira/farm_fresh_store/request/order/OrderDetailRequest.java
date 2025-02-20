@@ -10,8 +10,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderDetailRequest {
-    private Integer quantity;
-    private Double price;
+    private Integer quantityOrder;
     private String color;
     private String product_id;
 }
