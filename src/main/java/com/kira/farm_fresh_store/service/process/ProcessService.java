@@ -9,6 +9,9 @@ import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.camunda.bpm.engine.task.Task;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class ProcessService implements IProcessService {
@@ -20,10 +23,17 @@ public class ProcessService implements IProcessService {
 
     @Override
     public String approveOrder(String taskId) {
+        boolean requiresManualConfirmation = true;
+        Map<String, Object> variables = new HashMap<>();
         if (taskId == null || taskId.isEmpty()) {
-            throw new ResourceNotFoundException("Không tìm thấy taskId");
+            requiresManualConfirmation = false;
         }
-        taskService.complete(taskId);
-        return "Đã duyệt đơn hàng với taskId là " + taskId;
+        variables.put("requiresManualConfirmation", requiresManualConfirmation);
+
+        // Truyền biến vào complete
+        taskService.complete(taskId, variables);
+
+        return "Đã duyệt đơn hàng với taskId là " + taskId;
     }
+
 }

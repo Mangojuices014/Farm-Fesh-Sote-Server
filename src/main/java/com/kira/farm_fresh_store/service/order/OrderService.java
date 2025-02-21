@@ -58,8 +58,10 @@ public class OrderService implements IOrderService {
     @Override
     public OrderDto createOrder(CreateOrderRequest request) {
         // 1. Khởi chạy quy trình Camunda
+        String businessKey = util.generateRandomID();
         ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(
-                "Process_1uxj2sj", util.generateRandomID());
+                "Process_1uxj2sj", businessKey);
+
 
         // 2. Lấy task "Kiểm tra đăng nhập"
         Task task = taskService.createTaskQuery()
@@ -72,6 +74,7 @@ public class OrderService implements IOrderService {
 
         Map<String, Object> variables = new HashMap<>();
         variables.put("auth", isAuthenticated);
+        variables.put("businessKey", businessKey);
         variables.put("productIds", request.getOrder_details().stream()
                 .map(OrderDetailRequest::getProduct_id)
                 .collect(Collectors.toList()));
@@ -104,8 +107,8 @@ public class OrderService implements IOrderService {
             order.setId(util.createIDFromLastID("OD", 2, lastOrder.getId()));
         }
         order.setUser(user);
-        order.setBussinessKey(processInstance.getBusinessKey());
-        order.setStatus(Status.NEW);
+        order.setBussinessKey(businessKey);
+        order.setStatus(Status.PENDING);
         order.setOrderInfo(request.getOrderInfo());
 
         double totalPrice = 0;
