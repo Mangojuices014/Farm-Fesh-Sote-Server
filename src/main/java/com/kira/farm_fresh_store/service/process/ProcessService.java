@@ -36,4 +36,19 @@ public class ProcessService implements IProcessService {
         return "Đã duyệt đơn hàng với taskId là " + taskId;
     }
 
+    @Override
+    public String rejectOrder(String taskId) {
+        boolean requiresManualConfirmation = false;
+        Map<String, Object> variables = new HashMap<>();
+        if (taskId == null || taskId.isEmpty()) {
+            requiresManualConfirmation = true;
+        }
+        variables.put("requiresManualConfirmation", requiresManualConfirmation);
+
+        // Truyền biến vào complete
+        taskService.complete(taskId, variables);
+
+        return "Đã hủy đơn hàng với taskId là " + taskId;
+    }
+
 }

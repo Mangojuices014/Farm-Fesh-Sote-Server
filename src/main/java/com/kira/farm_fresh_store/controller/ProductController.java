@@ -7,8 +7,10 @@ import com.kira.farm_fresh_store.response.ApiResponse;
 import com.kira.farm_fresh_store.service.product.ProductService;
 import com.kira.farm_fresh_store.utils.FeedBackMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -21,10 +23,11 @@ public class ProductController {
 
     private final ProductService productService;
 
-    @PostMapping("/create-product")
-    public ResponseEntity<ApiResponse<ProductDto>> createProduct(@RequestBody CreateProductRequest productDto) {
+    @PostMapping(value = "/create-product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<ProductDto>> createProduct(@ModelAttribute CreateProductRequest productDto,
+                                                                 @RequestPart(name = "file", required = true) MultipartFile file) {
         try{
-            ProductDto productResponse = productService.createProduct(productDto);
+            ProductDto productResponse = productService.createProduct(productDto, file);
             // Trả về ApiResponse với thông báo thành công
             return ResponseEntity.status(CREATED)
                     .body(new ApiResponse<>(FeedBackMessage.CREATE_USER_SUCCESS, productResponse));

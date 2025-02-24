@@ -19,12 +19,27 @@ public class ProcessController {
 
     private final IProcessService processService;
 
+    @PreAuthorize("hasAuthority(ADMIN)")
     @PostMapping("/order/approval/{taskId}")
-    public ResponseEntity<ApiResponse<String>> startProcess(@PathVariable String taskId) {
+    public ResponseEntity<ApiResponse<String>> approvalProcess(@PathVariable String taskId) {
         try {
             // Trả về ApiResponse với thông báo thành công
             return ResponseEntity.status(OK)
                     .body(new ApiResponse<>(FeedBackMessage.SUCCESS, processService.approveOrder(taskId)));
+        }catch (ResourceNotFoundException e){
+            // Trả về ApiResponse với thông báo thành công
+            return ResponseEntity.status(BAD_REQUEST)
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        }
+    }
+
+    @PreAuthorize("hasAuthority(ADMIN)")
+    @PostMapping("/order/reject/{taskId}")
+    public ResponseEntity<ApiResponse<String>> rejectProcess(@PathVariable String taskId) {
+        try {
+            // Trả về ApiResponse với thông báo thành công
+            return ResponseEntity.status(OK)
+                    .body(new ApiResponse<>(FeedBackMessage.SUCCESS, processService.rejectOrder(taskId)));
         }catch (ResourceNotFoundException e){
             // Trả về ApiResponse với thông báo thành công
             return ResponseEntity.status(BAD_REQUEST)
