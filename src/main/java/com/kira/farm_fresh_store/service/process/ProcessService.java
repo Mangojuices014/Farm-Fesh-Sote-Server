@@ -15,9 +15,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class ProcessService implements IProcessService {
-
     private final RuntimeService runtimeService;
-
     private final Util util;
     private final TaskService taskService;
 
@@ -29,10 +27,8 @@ public class ProcessService implements IProcessService {
             requiresManualConfirmation = false;
         }
         variables.put("requiresManualConfirmation", requiresManualConfirmation);
-
         // Truyền biến vào complete
         taskService.complete(taskId, variables);
-
         return "Đã duyệt đơn hàng với taskId là " + taskId;
     }
 
@@ -44,11 +40,8 @@ public class ProcessService implements IProcessService {
             requiresManualConfirmation = true;
         }
         variables.put("requiresManualConfirmation", requiresManualConfirmation);
-
         // Truyền biến vào complete
         taskService.complete(taskId, variables);
-
         return "Đã hủy đơn hàng với taskId là " + taskId;
     }
-
 }
