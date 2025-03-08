@@ -39,7 +39,12 @@ public class ProductService implements IProductService {
 
         // ✅ **Tạo Product từ request**
         Product product = modelMapper.map(request, Product.class);
-
+        Product lastCart = productRepository.findFirstByOrderByIdDesc();
+        if (lastCart == null) {
+            product.setId(util.createNewID("PRODUCT"));
+        } else {
+            product.setId(util.createIDFromLastID("PRODUCT", 7, lastCart.getId()));
+        }
         // ✅ **Upload ảnh lên Google Drive**
         String imageUrl = googleDriveService.uploadImageToDrive(file);
         if (imageUrl == null || imageUrl.isEmpty()) {

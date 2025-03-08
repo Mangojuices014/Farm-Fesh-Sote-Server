@@ -16,7 +16,6 @@ import java.util.List;
 @Table(name = "php_products")
 public class Product extends BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     private String sku;
 

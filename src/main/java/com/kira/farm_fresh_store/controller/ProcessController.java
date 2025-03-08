@@ -23,9 +23,9 @@ public class ProcessController {
 
     private final IProcessService processService;
 
-    private final String CAMUNDA_API_URL = "http://localhost:8182/engine-rest/task?taskDefinitionKey=Complete_Order";
+    private final String CAMUNDA_API_URL = "http://localhost:8182/engine-rest/task?taskDefinitionKey=Activity_0njl4wm";
 
-    @GetMapping("/task")
+    @GetMapping("/task/order")
     public ResponseEntity<Object> getTasksFromCamunda() {
         RestTemplate restTemplate = new RestTemplate();
 

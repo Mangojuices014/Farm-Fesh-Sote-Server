@@ -8,6 +8,7 @@ import com.kira.farm_fresh_store.response.ApiResponse;
 import com.kira.farm_fresh_store.service.product.ProductService;
 import com.kira.farm_fresh_store.utils.FeedBackMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,8 +33,11 @@ public class ProductController {
             // Trả về ApiResponse với thông báo thành công
             return ResponseEntity.status(CREATED)
                     .body(new ApiResponse<>(FeedBackMessage.CREATE_USER_SUCCESS, productResponse));
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.status(BAD_REQUEST)
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(e.getMessage(), null));
         }
     }

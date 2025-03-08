@@ -1,7 +1,5 @@
-package com.kira.farm_fresh_store.dto.order;
+package com.kira.farm_fresh_store.request.order;
 
-import com.kira.farm_fresh_store.entity.BaseEntity;
-import com.kira.farm_fresh_store.entity.order.Order;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,9 +9,7 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ShipmentDto {
-    private String id;
-    private String orderId;
+public class UpdateShipmentRequest {
     private String address;
     private String phone;
     private String email;

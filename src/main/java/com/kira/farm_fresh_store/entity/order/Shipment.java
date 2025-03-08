@@ -15,6 +15,7 @@ import lombok.Setter;
 @Table(name="php_shipment")
 public class Shipment extends BaseEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -31,5 +32,4 @@ public class Shipment extends BaseEntity {
     private String email;
 
     private String customerName;
-
 }

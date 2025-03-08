@@ -9,10 +9,14 @@ import com.kira.farm_fresh_store.repository.CartRepository;
 import com.kira.farm_fresh_store.repository.ProductRepository;
 import com.kira.farm_fresh_store.repository.UserRepository;
 import com.kira.farm_fresh_store.request.order.CreateCartRequest;
+import com.kira.farm_fresh_store.utils.AuthenUtil;
 import com.kira.farm_fresh_store.utils.Util;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -57,22 +61,47 @@ public class CartService implements ICartService {
     }
 
     @Override
-    public CartDto getAllCart() {
-        return null;
+    public List<CartDto> getCartByUser() {
+        long userId = AuthenUtil.getProfileId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng."));
+
+        // Lấy danh sách giỏ hàng của user
+        List<Cart> carts = cartRepository.findByUser(user);
+
+        if (carts.isEmpty()) {
+            throw new ResourceNotFoundException("Giỏ hàng của bạn đang trống.");
+        }
+
+        // Chuyển đổi danh sách Cart sang CartDto
+        return carts.stream()
+                .map(cart -> modelMapper.map(cart, CartDto.class))
+                .collect(Collectors.toList());
     }
 
-    @Override
-    public CartDto getCartByUser(String username) {
-        return null;
-    }
 
     @Override
     public String deleteCartById(String cartId) {
-        return "";
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giỏ hàng"));
+        cartRepository.delete(cart);
+        return "Xóa thanh công";
     }
 
     @Override
     public String deleteAllCart() {
-        return "";
+        long userId = AuthenUtil.getProfileId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng."));
+
+        List<Cart> carts = cartRepository.findByUser(user);
+
+        if (carts.isEmpty()) {
+            return "Giỏ hàng của bạn đã trống.";
+        }
+
+        cartRepository.deleteAll(carts);
+        return "Xóa toàn bộ giỏ hàng thành công.";
     }
+
 }
