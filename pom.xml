@@ -157,6 +157,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.keycloak</groupId>
+			<artifactId>keycloak-admin-client</artifactId>
+			<version>22.0.5</version>  <!-- Kiểm tra phiên bản mới nhất -->
+		</dependency>
 	</dependencies>
 
 	<build>

@@ -1,6 +1,7 @@
 package com.kira.farm_fresh_store.service.user;
 
 import com.kira.farm_fresh_store.dto.EntityConverter;
+import com.kira.farm_fresh_store.dto.user.OtpRequest;
 import com.kira.farm_fresh_store.request.user.LoginRequest;
 import com.kira.farm_fresh_store.request.user.RegisterUserModel;
 import com.kira.farm_fresh_store.dto.user.UserDto;
@@ -11,6 +12,7 @@ import com.kira.farm_fresh_store.repository.UserRepository;
 import com.kira.farm_fresh_store.request.user.ResetPasswordRequest;
 import com.kira.farm_fresh_store.request.user.UpdateUserRequest;
 import com.kira.farm_fresh_store.response.keycloak.IdentityClient;
+import com.kira.farm_fresh_store.service.otp.OtpService;
 import com.kira.farm_fresh_store.utils.AuthenUtil;
 import com.kira.farm_fresh_store.utils.FeedBackMessage;
 import feign.FeignException;
@@ -28,6 +30,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class UserService implements IUserService {
+
+    private final OtpService otpService;
 
     private final ModelMapper modelMapper;
 
@@ -77,7 +81,7 @@ public class UserService implements IUserService {
         // Nếu không bị trùng, tiếp tục tạo user
         User user = modelMapper.map(registerUserModel, User.class);
         user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-
+        user.setEnabled(false);
         return userRepository.save(user);
     }
 
@@ -141,6 +145,7 @@ public class UserService implements IUserService {
         userRepository.save(theUser);
         return true;
     }
+
 
     public void saveAllUsers(List<User> users) {
         userRepository.saveAll(users);

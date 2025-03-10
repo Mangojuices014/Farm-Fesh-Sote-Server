@@ -153,4 +153,69 @@ public class EmailTemplateServiceImpl implements EmailTemplateService{
         return htmlBuilder.toString();
     }
 
+    @Override
+    public String buildOtpEmailTemplate(String username, Integer otp) {
+        StringBuilder htmlBuilder = new StringBuilder();
+
+        htmlBuilder.append("<!DOCTYPE html>")
+                .append("<html>")
+                .append("<head>")
+                .append("<meta charset=\"utf-8\">")
+                .append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
+                .append("<title>Mã xác thực OTP</title>")
+                .append("</head>")
+                .append("<body style=\"font-family: Arial, sans-serif; margin: 0; padding: 0; color: #333;\">")
+                .append("<div style=\"max-width: 600px; margin: 0 auto; padding: 20px;\">");
+
+        // Banner
+        htmlBuilder.append("<div style=\"background-color: #4F46E5; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; margin-bottom: 20px;\">")
+                .append("<h1 style=\"color: white; margin: 0;\">Mã xác thực OTP</h1>")
+                .append("</div>");
+
+        // Greeting
+        htmlBuilder.append("<div style=\"padding: 0 20px;\">")
+                .append("<p style=\"font-size: 16px;\">Xin chào <strong>").append(username).append("</strong>,</p>")
+                .append("<p style=\"font-size: 16px;\">Chúng tôi đã nhận được yêu cầu xác thực tài khoản của bạn. Vui lòng sử dụng mã OTP dưới đây để hoàn tất quá trình xác thực.</p>");
+
+        // OTP Box
+        htmlBuilder.append("<div style=\"text-align: center; margin: 30px 0;\">")
+                .append("<div style=\"display: inline-block; background-color: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; min-width: 200px;\">")
+                .append("<h2 style=\"margin-top: 0; color: #4F46E5; font-size: 18px;\">Mã OTP của bạn</h2>")
+                .append("<div style=\"font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #333; margin: 10px 0;\">").append(otp).append("</div>")
+                .append("<p style=\"margin-bottom: 0; font-size: 14px; color: #666;\">Mã có hiệu lực trong 5 phút</p>")
+                .append("</div>")
+                .append("</div>");
+
+        // Security notice
+        htmlBuilder.append("<div style=\"border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-top: 20px; background-color: #f9f9f9;\">")
+                .append("<h3 style=\"font-size: 16px; margin-top: 0; color: #333;\">Lưu ý bảo mật</h3>")
+                .append("<ul style=\"padding-left: 20px; margin-bottom: 0;\">")
+                .append("<li style=\"margin-bottom: 8px;\">Mã OTP chỉ có hiệu lực trong 5 phút.</li>")
+                .append("<li style=\"margin-bottom: 8px;\">Bạn chỉ có thể yêu cầu tối đa 5 lần trong 10 phút.</li>")
+                .append("<li style=\"margin-bottom: 8px;\">Không chia sẻ mã OTP này với bất kỳ ai, kể cả nhân viên của chúng tôi.</li>")
+                .append("<li>Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email này hoặc liên hệ với chúng tôi.</li>")
+                .append("</ul>")
+                .append("</div>");
+
+        // Footer message
+        htmlBuilder.append("<div style=\"margin-top: 30px; font-size: 16px;\">")
+                .append("<p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi.</p>")
+                .append("<p>Trân trọng,<br><strong>Đội ngũ hỗ trợ</strong></p>")
+                .append("</div>");
+
+        // Company footer
+        htmlBuilder.append("<div style=\"margin-top: 30px; padding: 20px; background-color: #f5f5f5; border-radius: 0 0 8px 8px; text-align: center; font-size: 14px; color: #666;\">")
+                .append("<p>© 2025 Cửa hàng của chúng tôi. Tất cả các quyền được bảo lưu.</p>")
+                .append("<p>Địa chỉ: 203 Phú thạnh, Huyện Cần Giuộc, Tỉnh Long An</p>")
+                .append("</div>");
+
+        // Close all tags
+        htmlBuilder.append("</div>") // Close content div
+                .append("</div>") // Close container div
+                .append("</body>")
+                .append("</html>");
+
+        return htmlBuilder.toString();
+    }
+
 }

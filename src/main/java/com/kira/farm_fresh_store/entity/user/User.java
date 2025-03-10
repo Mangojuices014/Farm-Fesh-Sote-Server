@@ -33,6 +33,8 @@ public class User extends BaseEntity {
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
+    private Boolean enabled;
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "userdetail_id", referencedColumnName = "id")
     private UserDetail userDetail;
