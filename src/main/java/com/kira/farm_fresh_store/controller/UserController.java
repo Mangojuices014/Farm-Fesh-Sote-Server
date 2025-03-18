@@ -71,17 +71,6 @@ public class UserController {
         }
     }
 
-    @PutMapping("/reset-password")
-    @Operation(summary = "API thay đổi thông tin người dùng")
-    public ResponseEntity<ApiResponse<?>> resetPassword(@RequestBody ResetPasswordRequest newPassword) {
-        try {
-            boolean theUser = userService.resetPassword(newPassword);
-            return ResponseEntity.status(OK)
-                    .body(new ApiResponse<>(FeedBackMessage.UPDATE_USER, theUser));
-        }catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse<>(FeedBackMessage.NOT_USER_FOUND, null));
-        }
-    }
 
     @DeleteMapping("/delete/{userId}")
     @Operation(summary = "API thay đổi thông tin người dùng")

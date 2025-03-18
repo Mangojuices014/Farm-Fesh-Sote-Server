@@ -8,6 +8,7 @@ import com.kira.farm_fresh_store.request.product.CreateProductRequest;
 import com.kira.farm_fresh_store.request.product.UpdateProductRequest;
 import com.kira.farm_fresh_store.service.googleDrive.GoogleDriveService;
 import com.kira.farm_fresh_store.utils.Util;
+import com.kira.farm_fresh_store.utils.enums.ETypeProduct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -99,6 +100,7 @@ public class ProductService implements IProductService {
         productDto.setId(product.getId());
         productDto.setSku(product.getSku());
         productDto.setType(product.getType());
+        productDto.setName(product.getName());
         productDto.setOrigin(product.getOrigin());
         productDto.setHarvestDate(product.getHarvestDate());
         productDto.setDescription(product.getDescription());
@@ -142,6 +144,7 @@ public class ProductService implements IProductService {
             productDto.setId(product.getId());
             productDto.setSku(product.getSku());
             productDto.setType(product.getType());
+            productDto.setName(product.getName());
             productDto.setOrigin(product.getOrigin());
             productDto.setHarvestDate(product.getHarvestDate());
             productDto.setDescription(product.getDescription());
@@ -219,6 +222,58 @@ public class ProductService implements IProductService {
 
         }
         return modelMapper.map(productRepository.save(product), ProductDto.class);
+    }
+
+    @Override
+    public List<ProductDto> getProductsByType(ETypeProduct type) {
+        List<Product> products = productRepository.findByType(type);
+
+        return products.stream().map(product -> {
+            ProductDto productDto = new ProductDto();
+            productDto.setId(product.getId());
+            productDto.setSku(product.getSku());
+            productDto.setType(product.getType());
+            productDto.setName(product.getName());
+            productDto.setOrigin(product.getOrigin());
+            productDto.setHarvestDate(product.getHarvestDate());
+            productDto.setDescription(product.getDescription());
+            productDto.setPrice(product.getPrice());
+            productDto.setWeight(product.getWeight());
+            productDto.setQuantityProduct(product.getQuantityProduct());
+            productDto.setImage(product.getImage());
+            productDto.setActive(product.getActive());
+
+            switch (type) {
+                case FRUIT:
+                    if (product.getFruit() != null) {
+                        productDto.setSweetnessLevel(product.getFruit().getSweetnessLevel());
+                        productDto.setVitaminFruit(product.getFruit().getVitaminFruit());
+                    }
+                    break;
+                case VEGETABLE:
+                    if (product.getVegetable() != null) {
+                        productDto.setLeafy(product.getVegetable().getLeafy());
+                        productDto.setVitaminVegetable(product.getVegetable().getVitaminVegetable());
+                    }
+                    break;
+                case MEAT:
+                    if (product.getMeat() != null) {
+                        productDto.setProteinContent(product.getMeat().getProteinContent());
+                        productDto.setMeatType(product.getMeat().getMeatType());
+                    }
+                    break;
+                case FISH:
+                    if (product.getFish() != null) {
+                        productDto.setOmega3Content(product.getFish().getOmega3Content());
+                        productDto.setWaterType(product.getFish().getWaterType());
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            return productDto;
+        }).collect(Collectors.toList());
     }
 
 }

@@ -16,15 +16,11 @@ import com.kira.farm_fresh_store.utils.FeedBackMessage;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
 import javax.security.sasl.AuthenticationException;
-
-import java.util.List;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -33,22 +29,12 @@ import static org.springframework.http.HttpStatus.*;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final RestTemplate restTemplate = new RestTemplate();
-
     private final UserService userService;
-
     private final EntityConverter<User, UserDto> entityConverter;
-
     private final OtpService otpService;
     private final UserRepository userRepository;
+//    private final KeycloakService keycloakService;
 
-    @Value("${idp.url}")
-    private String authServerUrl;
-
-    @Value("${keycloak.realm}")
-    private String realm;
-
-//    private final IKeycloakService keycloakService;
 
     @PostMapping("/register")
     @Operation(summary = "API đăng kí tài khoản mới")
@@ -76,12 +62,9 @@ public class AuthController {
         try {
             TokenExchangeResponse tokenResponse = userService.login(loginRequest);
             return ResponseEntity.ok(new ApiResponse<>(FeedBackMessage.LOGIN_SUCCESS, tokenResponse));
-        } catch (AuthenticationException e) {
+        } catch (AuthenticationException | DisabledException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiResponse<>(e.getMessage(), null));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>("Lỗi máy chủ", null));
         }
     }
 
@@ -117,13 +100,21 @@ public class AuthController {
     @PostMapping("/resend")
     public ResponseEntity<ApiResponse<String>> resendOtp(@RequestBody @Valid OtpRequest request) {
         try {
-            otpService.sendOtp(request.getEmail());
+            otpService.resendOtp(request.getEmail());
             return ResponseEntity.ok(new ApiResponse<>("OTP mới đã được gửi đến email của bạn.", null));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(new ApiResponse<>(e.getMessage(), null));
         }
     }
+
+
+
+//    @PostMapping("/forgot-password")
+//    public ResponseEntity<String> forgotPassword(@RequestParam String email) {
+//        String response = keycloakService.resetPassword(email);
+//        return ResponseEntity.ok(response);
+//    }
 
 
 //    @PostMapping("/forgot-password")

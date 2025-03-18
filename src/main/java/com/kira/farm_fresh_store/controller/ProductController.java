@@ -7,8 +7,8 @@ import com.kira.farm_fresh_store.request.product.UpdateProductRequest;
 import com.kira.farm_fresh_store.response.ApiResponse;
 import com.kira.farm_fresh_store.service.product.ProductService;
 import com.kira.farm_fresh_store.utils.FeedBackMessage;
+import com.kira.farm_fresh_store.utils.enums.ETypeProduct;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -99,6 +99,18 @@ public class ProductController {
                     .body(new ApiResponse<>(e.getMessage(), null));
         }
 
+    }
+
+    @GetMapping("/type-product/{type}")
+    public ResponseEntity<ApiResponse<List<ProductDto>>> getProductsByType(@PathVariable ETypeProduct type) {
+        try {
+            List<ProductDto> products = productService.getProductsByType(type);
+            return ResponseEntity.status(OK)
+                    .body(new ApiResponse<>(FeedBackMessage.SUCCESS, products));
+        }catch (ResourceNotFoundException e){
+            return ResponseEntity.status(BAD_REQUEST)
+                    .body(new ApiResponse<>(FeedBackMessage.UN_SUCCESS, null));
+        }
     }
 
 }

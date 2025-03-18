@@ -9,9 +9,9 @@ import com.kira.farm_fresh_store.entity.order.Shipment;
 import com.kira.farm_fresh_store.entity.product.Product;
 import com.kira.farm_fresh_store.entity.user.User;
 import com.kira.farm_fresh_store.exception.ResourceNotFoundException;
-import com.kira.farm_fresh_store.exception.UnauthorizedException;
 import com.kira.farm_fresh_store.exception.UserNotAuthenticatedException;
 import com.kira.farm_fresh_store.repository.*;
+import com.kira.farm_fresh_store.request.order.CreateFormOrderRequest;
 import com.kira.farm_fresh_store.request.order.CreateOrderRequest;
 import com.kira.farm_fresh_store.request.order.OrderDetailRequest;
 import com.kira.farm_fresh_store.utils.AuthenUtil;
@@ -65,7 +65,7 @@ public class OrderService implements IOrderService {
 
     @Override
     @Transactional
-    public OrderDto createOrder(CreateOrderRequest request) throws JsonProcessingException {
+    public OrderDto createOrderWithCart(CreateOrderRequest request) throws JsonProcessingException {
         // 1. Khởi chạy quy trình Camunda
         String businessKey = util.generateRandomID();
         // Lấy thông tin User
@@ -110,6 +110,7 @@ public class OrderService implements IOrderService {
             totalItem += cartItem.getQuantity();
         }
         // Gán OrderDetail vào Order
+
         order.setOrderDetails(orderDetails);
         order.setTotalItem(totalItem);
         order.setTotalPrice(totalPrice);
@@ -157,6 +158,96 @@ public class OrderService implements IOrderService {
 
         return modelMapper.map(savedOrder, OrderDto.class);
     }
+
+    @Override
+    public OrderDto createOrder(CreateFormOrderRequest request){
+        // 1. Khởi chạy quy trình Camunda
+        String businessKey = util.generateRandomID();
+        // Lấy thông tin User
+        long userId = AuthenUtil.getProfileId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng."));
+
+        // Tạo đơn hàng mới
+        Order order = new Order();
+        Order lastOrder = orderRepository.findFirstByOrderByIdDesc();
+        if (lastOrder == null) {
+            order.setId(util.createNewID("ORDER"));
+        } else {
+            order.setId(util.createIDFromLastID("ORDER", 5, lastOrder.getId()));
+        }
+        order.setUser(user);
+        order.setOrderInfo(request.getOrderInfo());
+        order.setStatus(Status.WAITING);
+        order.setSend_status(false);
+        order.setBusinessKey(businessKey);
+
+        // Tạo danh sách OrderDetail từ Cart
+        List<OrderDetail> orderDetails = new ArrayList<>();
+        long totalPrice = 0;
+        int totalItem = 0;
+
+        for (OrderDetailRequest orderDetailDto : request.getDetails()) {
+            Product product = productRepository.findById(orderDetailDto.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+
+            OrderDetail orderDetail = new OrderDetail();
+            orderDetail.setOrder(order);
+            orderDetail.setProduct(product);
+            orderDetail.setQuantity(orderDetailDto.getQuantity());
+            orderDetail.setPrice(product.getPrice() * orderDetailDto.getQuantity());
+            totalPrice += orderDetail.getPrice();
+            totalItem += orderDetail.getQuantity();
+
+            orderDetails.add(orderDetail);
+        }
+        // Gán OrderDetail vào Order
+        order.setOrderDetails(orderDetails);
+        order.setTotalItem(totalItem);
+        order.setTotalPrice(totalPrice);
+
+        // Tạo Shipment đi kèm
+        Shipment shipment = new Shipment();
+        shipment.setOrder(order);
+        shipment.setAddress(request.getShipment().getAddress());
+        shipment.setPhone(request.getShipment().getPhone());
+        shipment.setEmail(request.getShipment().getEmail());
+        shipment.setCustomerName(request.getShipment().getCustomerName());
+        shipment.setOrder_code(util.generateRandomID());
+
+        // Gán Shipment vào Order
+        order.setShipment(shipment);
+
+        // Lưu vào database
+        Order savedOrder = orderRepository.save(order);
+
+        ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(
+                "orderPorocessPayment", businessKey);
+        // 2. Lấy task "Kiểm tra đăng nhập"
+        Task task = taskService.createTaskQuery()
+                .processInstanceId(processInstance.getId())
+                .singleResult();
+        // 3. Kiểm tra đăng nhập
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAuthenticated = authentication != null && !(authentication instanceof AnonymousAuthenticationToken);
+        Map<String, Object> variables = new HashMap<>();
+        List<String> productIds = orderDetails.stream()
+                .map(orderDetail -> orderDetail.getProduct().getId())
+                .toList();
+        variables.put("productIds", productIds);
+        variables.put("auth", isAuthenticated);
+        variables.put("businessKey", businessKey);
+        // Nếu có task thì hoàn thành nó với biến auth
+        if (task != null) {
+            taskService.complete(task.getId(), variables);
+        }
+
+        // 4. Nếu không đăng nhập, ném lỗi
+        if (!isAuthenticated) {
+            throw new UserNotAuthenticatedException("Bạn vẫn chưa đăng nhập");
+        }
+
+        return modelMapper.map(savedOrder, OrderDto.class);    }
 
     @Override
     public OrderDto getOrderById(String orderId) {

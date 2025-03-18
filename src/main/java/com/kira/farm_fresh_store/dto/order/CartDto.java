@@ -16,8 +16,10 @@ import java.util.List;
 @NoArgsConstructor
 public class CartDto {
     private String id;
-    private Long userId;
     private String productId;
+    private String name;
+    private Double price;
+    private String image;
     private Integer quantity;
     private Integer selected;
 }

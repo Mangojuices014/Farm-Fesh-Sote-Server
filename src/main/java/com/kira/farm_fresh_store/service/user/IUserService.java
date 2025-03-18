@@ -30,5 +30,6 @@ public interface IUserService {
 
     Boolean resetPassword(ResetPasswordRequest newPassword);
 
+    boolean isUserEnabled(String username);
 
 }

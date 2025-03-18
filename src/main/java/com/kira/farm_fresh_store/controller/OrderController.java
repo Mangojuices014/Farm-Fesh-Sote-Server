@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kira.farm_fresh_store.dto.order.OrderDto;
 import com.kira.farm_fresh_store.exception.ResourceNotFoundException;
 import com.kira.farm_fresh_store.exception.UnauthorizedException;
+import com.kira.farm_fresh_store.request.order.CreateFormOrderRequest;
 import com.kira.farm_fresh_store.request.order.CreateOrderRequest;
 import com.kira.farm_fresh_store.response.ApiResponse;
 import com.kira.farm_fresh_store.service.order.OrderService;
@@ -27,9 +28,9 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping("/create-order")
-    public ResponseEntity<ApiResponse<OrderDto>> createOrder(@RequestBody CreateOrderRequest orderDto) {
+    public ResponseEntity<ApiResponse<OrderDto>> createOrderWithCart(@RequestBody CreateOrderRequest orderDto) {
         try {
-            OrderDto order = orderService.createOrder(orderDto);
+            OrderDto order = orderService.createOrderWithCart(orderDto);
             // Trả về ApiResponse với thông báo thành công
             return ResponseEntity.status(CREATED)
                     .body(new ApiResponse<>(FeedBackMessage.CREATE_USER_SUCCESS, order));
@@ -43,6 +44,24 @@ public class OrderController {
                     .body(new ApiResponse<>(e.getMessage(), null));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @PostMapping("/create-order/cart")
+    public ResponseEntity<ApiResponse<OrderDto>> createOrder(@RequestBody CreateFormOrderRequest orderDto) {
+        try {
+            OrderDto order = orderService.createOrder(orderDto);
+            // Trả về ApiResponse với thông báo thành công
+            return ResponseEntity.status(CREATED)
+                    .body(new ApiResponse<>(FeedBackMessage.CREATE_USER_SUCCESS, order));
+        } catch (ResourceNotFoundException e) {
+            // Trả về ApiResponse với thông báo thành công
+            return ResponseEntity.status(BAD_REQUEST)
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        }catch (IllegalArgumentException e) {
+            // Trả về ApiResponse với thông báo thành công
+            return ResponseEntity.status(UNAUTHORIZED)
+                    .body(new ApiResponse<>(e.getMessage(), null));
         }
     }
 

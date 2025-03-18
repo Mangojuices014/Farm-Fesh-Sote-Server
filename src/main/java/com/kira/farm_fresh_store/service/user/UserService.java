@@ -1,7 +1,6 @@
 package com.kira.farm_fresh_store.service.user;
 
 import com.kira.farm_fresh_store.dto.EntityConverter;
-import com.kira.farm_fresh_store.dto.user.OtpRequest;
 import com.kira.farm_fresh_store.request.user.LoginRequest;
 import com.kira.farm_fresh_store.request.user.RegisterUserModel;
 import com.kira.farm_fresh_store.dto.user.UserDto;
@@ -18,13 +17,16 @@ import com.kira.farm_fresh_store.utils.FeedBackMessage;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.security.sasl.AuthenticationException;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -46,9 +48,20 @@ public class UserService implements IUserService {
     private final BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
 
 
-    @Override
     public TokenExchangeResponse login(LoginRequest loginRequest) throws AuthenticationException {
-        try {
+            User user = userRepository.findUserByUsername(loginRequest.getUsername());
+
+            // Kiểm tra nếu user không tồn tại
+            if (user == null) {
+                throw new AuthenticationException("Sai tên đăng nhập hoặc mật khẩu.");
+            }
+
+            // Kiểm tra nếu tài khoản bị vô hiệu hóa
+            if (!user.getEnabled()) {
+                throw new DisabledException("Tài khoản chưa được kích hoạt.");
+            }
+
+            // Gửi request đến Keycloak để lấy token
             return identityClient.exchangeTokenClient(ClientTokenExchangeParam.builder()
                     .grant_type("password")
                     .client_id(keycloakProvider.getClientID())
@@ -57,14 +70,8 @@ public class UserService implements IUserService {
                     .password(loginRequest.getPassword())
                     .scope("openid")
                     .build());
-        } catch (FeignException.Unauthorized e) {
-            throw new AuthenticationException("Sai tên đăng nhập hoặc mật khẩu.");
-        } catch (FeignException e) {
-            throw new AuthenticationException("Lỗi xác thực : " + e.getMessage());
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi hệ thống khi đăng nhập.", e);
-        }
     }
+
 
     @Override
     public User register(RegisterUserModel registerUserModel) {
@@ -129,10 +136,10 @@ public class UserService implements IUserService {
 
     @Override
     public Boolean deleteUser(Long userId) {
-            User theUser = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException(FeedBackMessage.NOT_USER_FOUND));
-            userRepository.delete(theUser);
-            return true;
+        User theUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(FeedBackMessage.NOT_USER_FOUND));
+        userRepository.delete(theUser);
+        return true;
     }
 
     @Override
@@ -146,8 +153,9 @@ public class UserService implements IUserService {
         return true;
     }
 
-
-    public void saveAllUsers(List<User> users) {
-        userRepository.saveAll(users);
+    @Override
+    public boolean isUserEnabled(String username) {
+        return false;
     }
+
 }

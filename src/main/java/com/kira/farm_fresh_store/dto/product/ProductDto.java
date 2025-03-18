@@ -21,6 +21,7 @@ public class ProductDto {
     private String id;
     private String sku;
     private ETypeProduct type;
+    private String name;
     private String origin;
     private LocalDateTime harvestDate;
     private Integer shelfLife;
