@@ -94,7 +94,7 @@ public class OrderService implements IOrderService {
 
         // Tạo danh sách OrderDetail từ Cart
         List<OrderDetail> orderDetails = new ArrayList<>();
-        long totalPrice = 0;
+        double   totalPrice = 0;
         int totalItem = 0;
 
         for (Cart cartItem : cartItems) {
@@ -163,6 +163,7 @@ public class OrderService implements IOrderService {
     public OrderDto createOrder(CreateFormOrderRequest request){
         // 1. Khởi chạy quy trình Camunda
         String businessKey = util.generateRandomID();
+
         // Lấy thông tin User
         long userId = AuthenUtil.getProfileId();
         User user = userRepository.findById(userId)
@@ -182,29 +183,25 @@ public class OrderService implements IOrderService {
         order.setSend_status(false);
         order.setBusinessKey(businessKey);
 
-        // Tạo danh sách OrderDetail từ Cart
+        // Xử lý OrderDetail từ request
+        OrderDetailRequest orderDetailDto = request.getDetails();
+        Product product = productRepository.findById(orderDetailDto.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+
+        OrderDetail orderDetail = new OrderDetail();
+        orderDetail.setOrder(order);
+        orderDetail.setProduct(product);
+        orderDetail.setQuantity(orderDetailDto.getQuantity());
+        orderDetail.setPrice(product.getPrice());
+        orderDetail.setTotalPrice(product.getPrice() * orderDetailDto.getQuantity());
+
         List<OrderDetail> orderDetails = new ArrayList<>();
-        long totalPrice = 0;
-        int totalItem = 0;
+        orderDetails.add(orderDetail);
 
-        for (OrderDetailRequest orderDetailDto : request.getDetails()) {
-            Product product = productRepository.findById(orderDetailDto.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
-
-            OrderDetail orderDetail = new OrderDetail();
-            orderDetail.setOrder(order);
-            orderDetail.setProduct(product);
-            orderDetail.setQuantity(orderDetailDto.getQuantity());
-            orderDetail.setPrice(product.getPrice() * orderDetailDto.getQuantity());
-            totalPrice += orderDetail.getPrice();
-            totalItem += orderDetail.getQuantity();
-
-            orderDetails.add(orderDetail);
-        }
         // Gán OrderDetail vào Order
         order.setOrderDetails(orderDetails);
-        order.setTotalItem(totalItem);
-        order.setTotalPrice(totalPrice);
+        order.setTotalItem(orderDetail.getQuantity());
+        order.setTotalPrice(orderDetail.getPrice());
 
         // Tạo Shipment đi kèm
         Shipment shipment = new Shipment();
@@ -223,20 +220,22 @@ public class OrderService implements IOrderService {
 
         ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(
                 "orderPorocessPayment", businessKey);
+
         // 2. Lấy task "Kiểm tra đăng nhập"
         Task task = taskService.createTaskQuery()
                 .processInstanceId(processInstance.getId())
                 .singleResult();
+
         // 3. Kiểm tra đăng nhập
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         boolean isAuthenticated = authentication != null && !(authentication instanceof AnonymousAuthenticationToken);
         Map<String, Object> variables = new HashMap<>();
-        List<String> productIds = orderDetails.stream()
-                .map(orderDetail -> orderDetail.getProduct().getId())
-                .toList();
-        variables.put("productIds", productIds);
+
+        String productId = orderDetail.getProduct().getId();
+        variables.put("productIds", List.of(productId)); // Tạo danh sách chứa 1 phần tử
         variables.put("auth", isAuthenticated);
         variables.put("businessKey", businessKey);
+
         // Nếu có task thì hoàn thành nó với biến auth
         if (task != null) {
             taskService.complete(task.getId(), variables);
@@ -247,7 +246,9 @@ public class OrderService implements IOrderService {
             throw new UserNotAuthenticatedException("Bạn vẫn chưa đăng nhập");
         }
 
-        return modelMapper.map(savedOrder, OrderDto.class);    }
+        return modelMapper.map(savedOrder, OrderDto.class);
+    }
+
 
     @Override
     public OrderDto getOrderById(String orderId) {

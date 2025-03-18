@@ -34,7 +34,7 @@ public class Order extends BaseEntity {
 
     @Column(name = "business_key", unique = true) // Kiểm tra mapping
     private String businessKey;
-    private Long totalPrice;
+    private Double totalPrice;
 
     private Integer totalItem;
 

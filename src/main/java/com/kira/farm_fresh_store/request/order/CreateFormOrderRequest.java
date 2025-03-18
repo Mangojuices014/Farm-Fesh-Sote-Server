@@ -15,5 +15,5 @@ import java.util.List;
 public class CreateFormOrderRequest {
     private String orderInfo;
     private CreateShipmentRequest shipment;
-    private List<OrderDetailRequest> details;
+    private OrderDetailRequest details;
 }
