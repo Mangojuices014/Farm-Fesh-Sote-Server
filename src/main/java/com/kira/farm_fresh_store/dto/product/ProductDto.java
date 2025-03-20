@@ -26,7 +26,7 @@ public class ProductDto {
     private LocalDateTime harvestDate;
     private Integer shelfLife;
     private String description;
-    private Double price;
+    private Integer price;
     private Integer quantityProduct;
     private Double weight;
     private String image;

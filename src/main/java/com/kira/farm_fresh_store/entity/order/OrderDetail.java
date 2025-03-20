@@ -24,8 +24,8 @@ public class OrderDetail extends BaseEntity {
     private Product product;
 
     private Integer quantity;
-    private Double price;
-    private Double totalPrice;
+    private Integer price;
+    private Integer totalPrice;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)

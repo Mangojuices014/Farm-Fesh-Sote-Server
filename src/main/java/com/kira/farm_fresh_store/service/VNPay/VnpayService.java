@@ -40,14 +40,6 @@ public class VnpayService implements IVnpayService{
     public String createOrder(String businessKey, String urlReturn, String ipAddr) {
         Order order = orderRepository.findByBusinessKey(businessKey)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
-        Map<String, Object> variables = new HashMap<>();
-        Task task = taskService.createTaskQuery()
-                .processVariableValueEquals("businessKey", order.getBusinessKey()) // Truy vấn theo process variable
-                .singleResult(); // Lấy task đầu tiên
-        if (task == null) {
-            log.error("Không tìm thấy task cho businessKey: " + order.getBusinessKey());
-            return "{\"error\":\"Task not found\"}";
-        }
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
         String vnp_TxnRef = VnpayConfig.getRandomNumber(8);
@@ -120,12 +112,9 @@ public class VnpayService implements IVnpayService{
         // Chuyển đổi Map thành JSON string
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            variables.put("payment", true);
-            taskService.complete(task.getId(), variables);
+
             return objectMapper.writeValueAsString(responseJson);
         } catch (Exception e) {
-            variables.put("payment", false);
-            taskService.complete(task.getId(), variables);
             return "{\"error\":\"Unable to generate JSON\"}";
         }
     }

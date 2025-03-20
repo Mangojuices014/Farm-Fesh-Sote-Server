@@ -17,7 +17,8 @@ public class OrderDto {
     private String id;
     private Long userId;
     private String shipmentId;
-    private Long totalPrice;
+    private Integer totalPrice;
+    private String businessKey;
     private Integer totalItem;
     private String orderInfo;
     private String status;

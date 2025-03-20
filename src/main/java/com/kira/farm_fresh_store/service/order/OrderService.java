@@ -94,7 +94,7 @@ public class OrderService implements IOrderService {
 
         // Tạo danh sách OrderDetail từ Cart
         List<OrderDetail> orderDetails = new ArrayList<>();
-        double   totalPrice = 0;
+        int totalPrice = 0;
         int totalItem = 0;
 
         for (Cart cartItem : cartItems) {

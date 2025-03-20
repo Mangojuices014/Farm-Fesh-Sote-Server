@@ -1,5 +1,6 @@
 package com.kira.farm_fresh_store.controller;
 
+import com.kira.farm_fresh_store.config.VnpayConfig;
 import com.kira.farm_fresh_store.entity.order.Order;
 import com.kira.farm_fresh_store.entity.order.Transaction;
 import com.kira.farm_fresh_store.exception.ResourceNotFoundException;
@@ -13,11 +14,15 @@ import com.kira.farm_fresh_store.utils.enums.Status;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.camunda.bpm.engine.TaskService;
+import org.camunda.bpm.engine.task.Task;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -31,6 +36,9 @@ public class VNPayController {
     private final TransactionRepository transactionRepository;
 
     private final OrderRepository orderRepository;
+
+    private final TaskService taskService;
+
 
     @RequestMapping(value = "/api/v1/vnpay/submitOrder/{businessKey}", produces = "application/json;charset=UTF-8")
     public String submitOrder(@PathVariable String businessKey,
@@ -87,19 +95,32 @@ public class VNPayController {
                 : null);
         transaction.setReason(reason);
         // Kiểm tra nếu orderId không null, tìm order từ DB
-        if (orderId != null) {
-            Order order = orderRepository.findById(orderId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
-            transaction.setTblOrder(order);  // Gán Order vào Transaction
+        if (orderId == null) {
+            return null;
         }
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
+        Map<String, Object> variables = new HashMap<>();
+        Task task = taskService.createTaskQuery()
+                .processVariableValueEquals("businessKey", order.getBusinessKey()) // Truy vấn theo process variable
+                .singleResult(); // Lấy task đầu tiên
+        if (task == null) {
+            log.error("Không tìm thấy task cho businessKey: " + order.getBusinessKey());
+            return null;
+        }
+        transaction.setTblOrder(order);  // Gán Order vào Transaction
         // Xử lý trạng thái thanh toán
         if (paymentStatus == 1) {
             transaction.setStatus(Status.SUCCESS);
             transactionRepository.save(transaction);
+            variables.put("payment", true);
+            taskService.complete(task.getId(), variables);
             return ResponseEntity.ok().body("Thanh toán thành công!");
         } else if (paymentStatus == 0) {
             transaction.setStatus(Status.FAIL);
             transactionRepository.save(transaction);
+            variables.put("payment", false);
+            taskService.complete(task.getId(), variables);
             return ResponseEntity.badRequest().body("Thanh toán thất bại!");
         } else {
             return ResponseEntity.badRequest().body("Lỗi! Mã Secure Hash không hợp lệ hoặc trạng thái giao dịch không xác định.");

@@ -19,7 +19,7 @@ public class UpdateProductRequest {
     private Integer shelfLife;
     private String description;
     private Double weight;
-    private Double price;
+    private Integer price;
     private Integer quantityProduct;
 
     //	----------------	FRUIT   	--------------------
