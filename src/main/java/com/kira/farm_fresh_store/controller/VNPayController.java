@@ -12,6 +12,7 @@ import com.kira.farm_fresh_store.service.VNPay.IVnpayService;
 import com.kira.farm_fresh_store.utils.AuthenUtil;
 import com.kira.farm_fresh_store.utils.enums.Status;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.camunda.bpm.engine.TaskService;
@@ -19,10 +20,12 @@ import org.camunda.bpm.engine.task.Task;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -48,8 +51,8 @@ public class VNPayController {
     }
 
     @RequestMapping("/api/v1/vnpay/getPaymentInfo")
-    public ResponseEntity<?> getPaymentInfo(HttpServletRequest request) {
-        int paymentStatus = vnPayService.orderReturn(request);
+    public boolean getPaymentInfo(HttpServletRequest request, HttpServletResponse response) throws IOException {
+            int paymentStatus = vnPayService.orderReturn(request);
 
         Transaction transaction = new Transaction();
 
@@ -64,26 +67,27 @@ public class VNPayController {
         long amount = (amountStr != null && !amountStr.isEmpty()) ? Integer.parseInt(amountStr) : 0;
 
         String orderInfo = request.getParameter("vnp_OrderInfo");
-        String orderId = null;  // Order ID dạng String
-        if (orderInfo != null && orderInfo.contains("|")) {
-            String[] arrayInfo = orderInfo.split("\\|");  // Tách Order ID bằng dấu "|"
-            if (arrayInfo.length >= 1) {
-                orderId = arrayInfo[0];  // Lấy Order ID (String)
+        Long userID = null;
+        String orderId = null;
+        String reason = "";
+
+        if (orderInfo != null && orderInfo.contains("-") && orderInfo.contains("|")) {
+            String[] arrayInfo = orderInfo.split("-"); // Tách userID và orderId bằng dấu "-"
+            if (arrayInfo.length >= 2) {
+                userID = Long.parseLong(arrayInfo[0]); // Lấy userID
+                String[] orderInfoParts = arrayInfo[1].split("\\|"); // Tách orderId và mô tả thanh toán
+                if (orderInfoParts.length >= 1) {
+                    orderId = orderInfoParts[0]; // Lấy orderId
+                }
+                if (orderInfoParts.length >= 2) {
+                    reason = orderInfoParts[1]; // Lấy phần mô tả thanh toán
+                }
             }
         }
 
-        Long userID = AuthenUtil.getProfileId();
-        String reason = "";
-        if (orderInfo != null && orderInfo.contains("-")) {
-            String[] arrayInfo = orderInfo.split("-");
-            if (arrayInfo.length >= 2) {
-                userID = Long.parseLong(arrayInfo[0]);
-                reason = arrayInfo[1];
-            }
-        }
         // Set giá trị vào transaction
         transaction.setBillNo(billNo);
-        transaction.setTransNo(transactionNo);
+        transaction.setTransNo(UUID.randomUUID().toString() );
         transaction.setBankCode(bankCode);
         transaction.setCardType(cardType);
         transaction.setAmount(amount);
@@ -96,7 +100,7 @@ public class VNPayController {
         transaction.setReason(reason);
         // Kiểm tra nếu orderId không null, tìm order từ DB
         if (orderId == null) {
-            return null;
+            return false;
         }
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
@@ -106,7 +110,7 @@ public class VNPayController {
                 .singleResult(); // Lấy task đầu tiên
         if (task == null) {
             log.error("Không tìm thấy task cho businessKey: " + order.getBusinessKey());
-            return null;
+            return false;
         }
         transaction.setTblOrder(order);  // Gán Order vào Transaction
         // Xử lý trạng thái thanh toán
@@ -115,16 +119,15 @@ public class VNPayController {
             transactionRepository.save(transaction);
             variables.put("payment", true);
             taskService.complete(task.getId(), variables);
-            return ResponseEntity.ok().body("Thanh toán thành công!");
-        } else if (paymentStatus == 0) {
+            response.sendRedirect("http://localhost:4200/success/");
+            return true;
+        } else{
             transaction.setStatus(Status.FAIL);
             transactionRepository.save(transaction);
             variables.put("payment", false);
             taskService.complete(task.getId(), variables);
-            return ResponseEntity.badRequest().body("Thanh toán thất bại!");
-        } else {
-            return ResponseEntity.badRequest().body("Lỗi! Mã Secure Hash không hợp lệ hoặc trạng thái giao dịch không xác định.");
+            response.sendRedirect("http://localhost:4200/failed" );
+            return false;
         }
     }
-
 }

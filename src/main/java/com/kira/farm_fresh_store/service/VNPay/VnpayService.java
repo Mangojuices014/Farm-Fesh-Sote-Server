@@ -6,6 +6,7 @@ import com.kira.farm_fresh_store.entity.order.Order;
 import com.kira.farm_fresh_store.exception.ResourceNotFoundException;
 import com.kira.farm_fresh_store.repository.OrderRepository;
 import com.kira.farm_fresh_store.repository.TransactionRepository;
+import com.kira.farm_fresh_store.utils.AuthenUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.camunda.bpm.engine.TaskService;
@@ -57,7 +58,8 @@ public class VnpayService implements IVnpayService{
         vnp_Params.put("vnp_Amount", String.valueOf(order.getTotalPrice() * 100));
         vnp_Params.put("vnp_CurrCode", "VND");
         vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
-        String orderInfo = order.getId() + "|Thanh toán đơn hàng";  // Dùng ký tự phân tách an toàn hơn
+        Long userID = AuthenUtil.getProfileId();
+        String orderInfo = userID + "-" + order.getId() + "|Thanh toán đơn hàng";
         vnp_Params.put("vnp_OrderInfo", orderInfo);
         vnp_Params.put("vnp_OrderType", orderType);
 
